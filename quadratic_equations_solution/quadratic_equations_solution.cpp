@@ -108,7 +108,8 @@ int SolveQuadraticEquation(double a,
     assert(std::isfinite(c));
     assert(result1 != nullptr);
     assert(result2 != nullptr);
-    
+    assert(result1 != result2);
+
     if (IsEqual(a, 0)) {
         return SolveQuadraticEquation(b, c, result1);  
     }
