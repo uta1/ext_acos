@@ -65,5 +65,7 @@ wchar_t* readFile(const char* path, int fileSize) {
     
     is.read(result, fileSize);
     
+    is.close();
+
     return result;
 }
