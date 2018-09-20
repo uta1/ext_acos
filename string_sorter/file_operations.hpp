@@ -15,7 +15,7 @@
 * -----------------------------------------
 */
 bool isValidFile(const char* path) {
-    struct stat fileStat;
+    struct stat fileStat = {0};
     
     stat(path, &fileStat);
     if (S_ISREG(fileStat.st_mode)) {
@@ -38,7 +38,7 @@ bool isValidFile(const char* path) {
 * -----------------------------------------
 */
 int getFileSize(const char* path) {
-    struct stat fileStat; 
+    struct stat fileStat = {0}; 
     
     stat(path, &fileStat);
     

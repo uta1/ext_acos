@@ -24,8 +24,8 @@ int main(int argc, char** argv) {
         return 0;
     }
     
-    int numberOfLines;
-    wchar_t** linePointers;
+    int numberOfLines = 0;
+    wchar_t** linePointers = nullptr;
     
     numberOfLines = getLinesFromFile(argv[1], linePointers);
     
