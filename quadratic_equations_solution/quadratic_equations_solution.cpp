@@ -135,18 +135,19 @@ int SolveQuadraticEquation(double a,
 
 #if DEBUG==0
 int main() {
-    double a;
-    double b;
-    double c;
+    double a = 0.0f;
+    double b = 0.0f;
+    double c = 0.0f;
 
     printf("Enter coefficients of quadratic equation: ");
     
-    //Poor parsing, I can feed your program with any shit I wish and it will be working and returning irrelevant results,
-    //fix it, ok?
-    std::cin >> a >> b >> c;
+    if (scanf("%lf %lf %lf", &a, &b, &c) != 3) {
+        printf("Invalid data entered\n");
+        return 0;  
+    }
     
-    double result1;
-    double result2;
+    double result1 = 0.0f;
+    double result2 = 0.0f;
     
     int nRoots = SolveQuadraticEquation(a, b, c, &result1, &result2);
     
