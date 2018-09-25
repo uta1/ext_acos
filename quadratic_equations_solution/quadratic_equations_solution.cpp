@@ -141,6 +141,8 @@ int main() {
 
     printf("Enter coefficients of quadratic equation: ");
     
+    //Poor parsing, I can feed your program with any shit I wish and it will be working and returning irrelevant results,
+    //fix it, ok?
     std::cin >> a >> b >> c;
     
     double result1;
