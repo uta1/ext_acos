@@ -238,26 +238,3 @@ class Stack{
     }
 };
 
-int main () {
-    if (0) {
-        /*Stack<std::string> s;
-        for (int i = 0; i < 10;++i) {
-            s.Push("oks");
-        }
-        for (int i = 0; i < 5; ++i) {
-            std::cout << s.GetTop()<<std::endl;
-            s.Pop();
-        }*/
-    } else {
-        Stack<char> s;
-        for (int i = 0; i < 10;++i) {
-            s.Push('b');
-            s.Print();
-        }
-        for (int i = 0; i < 5; ++i) {
-            std::cout << s.GetTop()<<std::endl;
-            s.Pop();
-        }
-    }
-    return 0;
-}
