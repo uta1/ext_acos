@@ -3,20 +3,38 @@
 #include <cstring>
 #include <typeinfo>
 
+/*! ---------------------------------
+* @brief Precompile-time check on
+*        validity of type
+*
+* -----------------------------------
+*/
 template<typename T>
-constexpr bool isUseblaType = std::is_same<T, int>::value 
+constexpr bool isUsebleType = std::is_same<T, int>::value 
   || std::is_same<T, char>::value 
   || std::is_same<T, bool>::value;
 
+/*! ---------------------------------
+* @brief Safety stack with some 
+*        security levels
+*
+* -----------------------------------
+*/
 #ifdef private
 # undef private
 #endif
 template<class T>
 class Stack{
   
-  static_assert(isUseblaType<T>, "not usable type. Int, char, bool only.");
+  static_assert(isUsebleType<T>, "not usable type. Int, char, bool only.");
   
   public:
+
+    /*! ---------------------------------
+    * @brief Enum of possible methods errors
+    *
+    * -----------------------------------
+    */
     enum Error{
         OK = 0,
         MAX_SIZE_EXCEEDED = -1,
@@ -25,22 +43,34 @@ class Stack{
     };
 
   private:    
+    ///Capacity cannot be more than MAX_SIZE
     static const int MAX_SIZE = (1 << 20) - 1;
+    ///Koefficient of changing of capacity
     static const int GROWTH_FACTOR = 2;
+    ///Number of cells in array for canaries (on left and on right)
     static const int ARRAY_CANARY_SIZE = 2;
+    ///Object comparing with canaries
     char const *CANARY_OBJECT = "_canary\0";
-
-    T* array;
 
     char metaDataCanaryLeft[8] = "\0";
     
     int capacity = 0;
     int size = 0;
     
+    T* array;
+    
     long long arrayHash = 0;
     
     char metaDataCanaryRight[8] = "\0";
     
+    /*! ---------------------------------
+    * @brief Print all main information
+    *        about exemplar of class
+    *
+    * @param[in] message  Message to explain reason of causing
+    *
+    * -----------------------------------
+    */
     void Dump(const char* message) const {
         if (message != nullptr) {
             printf("%s\n", message);
@@ -56,6 +86,18 @@ class Stack{
         printf("\n");
     }
     
+    /*! ---------------------------------
+    * @brief Check canary in array on validity
+    *
+    * @param[in] indexInArray           Index of checking canary
+    *                                   in array
+    * @param[in] descriptionOfPosition  Description of position
+    *                                   in words for possible dump
+    *
+    * @returns  True of valid and false else
+    *
+    * -----------------------------------
+    */
     bool IsArrayCanaryValid(int indexInArray, const char* descriptionOfPosition) const {
         if (memcmp(array + indexInArray, CANARY_OBJECT, std::min(sizeof(T), strlen(CANARY_OBJECT))) != 0) {
             printf("Memory on %s is corrupted.\n", descriptionOfPosition);
@@ -66,6 +108,13 @@ class Stack{
         return true;
     }
     
+    /*! ---------------------------------
+    * @brief Check canaries of metadata on validity
+    *
+    * @returns  True of valid and false else
+    *
+    * -----------------------------------
+    */
     bool IsDataCanaryValid() const {
         bool leftValidity = (strcmp(metaDataCanaryLeft, CANARY_OBJECT) == 0);
         bool rightValidity = (strcmp(metaDataCanaryRight, CANARY_OBJECT) == 0);
@@ -86,6 +135,13 @@ class Stack{
         return true;
     }
     
+    /*! ---------------------------------
+    * @brief Get hash of main part of array (without canaries)
+    *
+    * @returns  Hash of main part of array
+    *
+    * -----------------------------------
+    */
     long long GetArrayHash() const {
         const long long mod = 1e9 + 7;
         const long long p = 37;
@@ -105,6 +161,13 @@ class Stack{
         return result;
     }
     
+    /*! ---------------------------------
+    * @brief Chech all the structure on validity
+    *
+    * @returns  Enum Error
+    *
+    * -----------------------------------
+    */
     Error Ok() const {
         for (int i = 0; i < ARRAY_CANARY_SIZE; ++i) {
             if (!IsArrayCanaryValid(i, "left side of buffer") || 
@@ -125,6 +188,16 @@ class Stack{
         return Error(OK); 
     }
     
+    /*! ---------------------------------
+    * @brief Attempt to increase or resuce buffer
+    *
+    * @param[in] toIncrease  If true then buffer will be
+    *                        increased and if false then reduced
+    *
+    * @returns  Enum Error
+    *
+    * -----------------------------------
+    */
     Error TryToResizeBuffer(bool toIncrease = true) {
         int tempCapacity = toIncrease ? capacity * GROWTH_FACTOR : capacity / GROWTH_FACTOR;
         if (tempCapacity > MAX_SIZE) {
@@ -177,8 +250,6 @@ class Stack{
             memcpy(array + ARRAY_CANARY_SIZE + capacity + i, CANARY_OBJECT, std::min(sizeof(T), strlen(CANARY_OBJECT)));
         }
         
-        //arrayHash = GetArrayHash();
-        
         metaDataCanaryLeft[0] = '\0';
         metaDataCanaryRight[0] = '\0';
         strcat(metaDataCanaryLeft, CANARY_OBJECT);
@@ -189,6 +260,13 @@ class Stack{
         delete[] array;
     }
     
+    /*! ---------------------------------
+    * @brief Pushes element on top of stack
+    *
+    * @param[in] element  Pushing element
+    *
+    * -----------------------------------
+    */
     void Push(T element) {
         if (Ok() != Error::OK) {
             return;
@@ -207,6 +285,11 @@ class Stack{
         arrayHash = GetArrayHash();
     }
 
+    /*! ---------------------------------
+    * @brief Delete element on top of stack
+    *
+    * -----------------------------------
+    */
     void Pop() {
         if (size == 0) {
             return;
@@ -220,6 +303,15 @@ class Stack{
         arrayHash = GetArrayHash();
     }
 
+    /*! ---------------------------------
+    * @brief Get element on top of stack
+    *
+    * @returns  Top element
+    *
+    * @note Don't delete any element
+    *
+    * -----------------------------------
+    */
     T GetTop() const {
         if (Ok() != Error::OK) {
             return array[0];
@@ -233,6 +325,12 @@ class Stack{
         }
     }
     
+    /*! ---------------------------------
+    * @brief Print all main information
+    *        about exemplar of class
+    *
+    * -----------------------------------
+    */
     void Print() const {
         Dump(nullptr);
     }
