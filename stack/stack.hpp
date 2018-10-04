@@ -84,6 +84,7 @@ class Stack{
         }
         
         printf("\n");
+        fflush(stdout);
     }
     
     /*! ---------------------------------
