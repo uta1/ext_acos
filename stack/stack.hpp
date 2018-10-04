@@ -5,7 +5,7 @@
 
 /*! ---------------------------------
 * @brief Precompile-time check on
-*        validity of type
+*        validity of type for stack
 *
 * -----------------------------------
 */
@@ -217,12 +217,12 @@ class Stack{
         }
         
         for (int i = ARRAY_CANARY_SIZE; i < ARRAY_CANARY_SIZE + (toIncrease ? capacity : tempCapacity); ++i) {
-            tempArray[i] = array[i];
+            tempArray[i] = std::move(array[i]);
         }
         
         for (int i = 0; i < ARRAY_CANARY_SIZE; ++i) {
-            tempArray[i] = array[i];
-            tempArray[ARRAY_CANARY_SIZE + tempCapacity + i] = array[ARRAY_CANARY_SIZE + capacity + i];
+            tempArray[i] = std::move(array[i]);
+            tempArray[ARRAY_CANARY_SIZE + tempCapacity + i] = std::move(array[ARRAY_CANARY_SIZE + capacity + i]);
         }
         
         capacity = tempCapacity;
@@ -238,7 +238,7 @@ class Stack{
         size = 0;
         capacity = 1;
         arrayHash = 1;
-        array = new T[capacity + ARRAY_CANARY_SIZE * 2];
+        array = new T[capacity + ARRAY_CANARY_SIZE * 2]{T(0)};
         
         if (array == nullptr) {
             Dump("Can not create buffer: allocation has failed");
