@@ -20,7 +20,7 @@ int main(int argc, char** argv) {
     std::locale::global(std::locale("en_US.UTF-8"));
     
     if (argc <= 1 || !isValidFile(argv[1])) {
-        wprintf(L"Invalid argument\n");
+        wprintf(L"Невальдный аргумент\n");
         return 0;
     }
     
