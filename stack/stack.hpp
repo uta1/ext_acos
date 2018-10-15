@@ -28,7 +28,7 @@ class Stack{
   
   static_assert(isUsebleType<T>, "not usable type. Int, char, bool only.");
   
-  public:
+ // public:
 
     /*! ---------------------------------
     * @brief Enum of possible methods errors
@@ -266,17 +266,19 @@ class Stack{
     *
     * @param[in] element  Pushing element
     *
+    * @returns  True if no errors and false else
+    *
     * -----------------------------------
     */
-    void Push(T element) {
+    bool Push(T element) {
         if (Ok() != Error::OK) {
-            return;
+            return false;
         }
         
         if (size == capacity) {
             Error errorCode = TryToResizeBuffer(true);
             if (errorCode != Error::OK) {
-                return;
+                return false;
             }
         }
         
@@ -284,16 +286,20 @@ class Stack{
         ++size;
     
         arrayHash = GetArrayHash();
+        
+        return true;
     }
 
     /*! ---------------------------------
     * @brief Delete element on top of stack
     *
+    * @returns  True if no errors and false else
+    *
     * -----------------------------------
     */
-    void Pop() {
+    bool Pop() {
         if (size == 0) {
-            return;
+            return false;
         }
         --size;
         
@@ -302,28 +308,47 @@ class Stack{
         }
         
         arrayHash = GetArrayHash();
+    
+        return true;
     }
 
     /*! ---------------------------------
-    * @brief Get element on top of stack
+    * @brief  Get element on top of stack
     *
-    * @returns  Top element
+    * @param[in] result  Where to write top element
     *
-    * @note Don't delete any element
+    * @returns  True if no errors and false else
+    *
+    * @note  Don't deletes any element
     *
     * -----------------------------------
     */
-    T GetTop() const {
+    bool GetTop(T* result) const {
+        if (result == nullptr) {
+            return false;
+        }
         if (Ok() != Error::OK) {
-            return array[0];
+            return false;
         }
         
         if (size != 0) {
-            return array[ARRAY_CANARY_SIZE + size - 1];
+            *result = array[ARRAY_CANARY_SIZE + size - 1];
+            return true;
         } else {
             printf("Attempt to get value from empty stack. Trash value was returned.\n");
-            return array[0];
+            return false;
         }
+    }
+
+    /*! ---------------------------------
+    * @brief Get current size of structure
+    *
+    * @returns  Size of structure
+    *
+    * -----------------------------------
+    */
+    int GetSize() const {
+        return size;
     }
     
     /*! ---------------------------------
