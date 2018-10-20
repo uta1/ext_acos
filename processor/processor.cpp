@@ -20,22 +20,47 @@ class Processor {
   private:
     static const int INTS_PER_COMMAND = sizeof(Command) / sizeof(int);
     Stack<int> s;
+    int rax = 0;
+    int rbx = 0;
+    int rcx = 0;
+    int rdx = 0;
     
-    Error PrintTop() const {
+    Error CheckNonemptyStack() const {
         if (s.GetSize() < 1) {
             fprintf(stderr, "Source error:\n getting item from empty stack\n");
             return Error(SOURCE_ERROR);
+        }
+        
+        return Error(OK);
+    }
+    
+    Error PushReg(int* reg) {
+        Error error = CheckNonemptyStack();
+        if (error != Error::OK) {
+            return error;
+        }
+        
+        s.GetTop(reg);
+        
+        return Error(OK);
+    }
+    
+    Error PrintTop() const {
+        Error error = CheckNonemptyStack();
+        if (error != Error::OK) {
+            return error;
         }
 
         int result = 0;
         s.GetTop(&result);
         cout << result << endl;
+        
         return Error(OK);
     }
     
     Error Process(Command command) {
         if (!command.IsValid()) {
-            fprintf(stderr, "Invalid command:\n type: %i\n arg %i\n", (int)command.GetType(), command.GetArg());
+            fprintf(stderr, "Invalid command:\n type: %i\n arg: %i\n", (int)command.GetType(), command.GetArg());
             return Error(INVALID_COMMAND);
         }
         
@@ -48,14 +73,46 @@ class Processor {
             fprintf(stderr, "Non-initial canary\n");
             return Error(EXTRA_CANARY);
             
-          case CommandType::PUSH:
+          case CommandType::PUSH:            
             s.Push(command.GetArg());
+            break;
+            
+          case CommandType::PUSHRAX:
+            PushReg(&rax);
+            break;
+            
+          case CommandType::PUSHRBX:
+            PushReg(&rbx);
+            break;
+            
+          case CommandType::PUSHRCX:
+            PushReg(&rcx);
+            break;
+            
+          case CommandType::PUSHRDX:
+            PushReg(&rdx);
             break;
             
           case CommandType::POP:
             s.Pop();
             break;
             
+          case CommandType::POPRAX:
+            s.Push(rax);
+            break;
+
+          case CommandType::POPRBX:
+            s.Push(rbx);
+            break;
+
+          case CommandType::POPRCX:
+            s.Push(rcx);
+            break;
+
+          case CommandType::POPRDX:
+            s.Push(rdx);
+            break;
+
           case CommandType::ADD:
             s.GetTop(&arg1);
             s.Pop();
@@ -80,7 +137,7 @@ class Processor {
             s.Push(enteredNumber);
             break;
             
-          case CommandType::OUT:
+          case CommandType::OUT:            
             PrintTop();
             break;
         }
@@ -93,7 +150,7 @@ class Processor {
 
     bool Execute(unsigned char const* dataCommandArray, int totalCommands) {
         Command canary(dataCommandArray);
-        if (canary.GetType() != CommandType::CANARY || canary.GetArg() != 0) {
+        if (!canary.EqualsCanary()) {
             fprintf(stderr, "The program does not comply with the protocol:\n broken file beginnig\n");
             return false;
         }

@@ -49,18 +49,55 @@ bool compile(char const* pathIn, char const* pathOut) {
     
     unsigned char* binCommand = (unsigned char*)calloc(8, sizeof(unsigned char));
     char* type = (char*)calloc(10, sizeof(char));
+    char* sysArg = (char*)calloc(10, sizeof(char)); 
     
     FILE* fout = fopen(pathOut, "wb");
     writeCanary(fout);
 
     while (stream >> type) {
         if (strcmp(type, "PUSH") == 0) {
-            writeUserCommand(fout, stream, CommandType::PUSH, binCommand, true);
+            stream >> sysArg;
+            
+            if (strcmp(sysArg, "S") == 0) {
+                writeUserCommand(fout, stream, CommandType::PUSH, binCommand, true);
+            } else 
+            
+            if (strcmp(sysArg, "RAX") == 0) {
+                writeUserCommand(fout, stream, CommandType::PUSHRAX, binCommand, false);
+            } else
+            if (strcmp(sysArg, "RBX") == 0) {
+                writeUserCommand(fout, stream, CommandType::PUSHRBX, binCommand, false);
+            } else
+            if (strcmp(sysArg, "RCX") == 0) {
+                writeUserCommand(fout, stream, CommandType::PUSHRCX, binCommand, false);
+            } else 
+            if (strcmp(sysArg, "RDX") == 0) {
+                writeUserCommand(fout, stream, CommandType::PUSHRDX, binCommand, false);
+            }
+            
             continue;
         }
 
         if (strcmp(type, "POP") == 0) {
-            writeUserCommand(fout, stream, CommandType::POP, binCommand, false);
+            stream >> sysArg;
+            
+            if (strcmp(sysArg, "S") == 0) {
+                writeUserCommand(fout, stream, CommandType::POP, binCommand, false);
+            } else 
+            
+            if (strcmp(sysArg, "RAX") == 0) {
+                writeUserCommand(fout, stream, CommandType::POPRAX, binCommand, false);
+            } else
+            if (strcmp(sysArg, "RBX") == 0) {
+                writeUserCommand(fout, stream, CommandType::POPRBX, binCommand, false);
+            } else
+            if (strcmp(sysArg, "RCX") == 0) {
+                writeUserCommand(fout, stream, CommandType::POPRCX, binCommand, false);
+            } else 
+            if (strcmp(sysArg, "RDX") == 0) {
+                writeUserCommand(fout, stream, CommandType::POPRDX, binCommand, false);
+            }
+            
             continue;
         }
 
@@ -99,6 +136,7 @@ bool compile(char const* pathIn, char const* pathOut) {
     
     fclose(fout);
     free(type);
+    free(sysArg);
     free(binCommand);
     free(source);
     

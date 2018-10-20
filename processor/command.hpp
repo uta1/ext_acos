@@ -1,14 +1,22 @@
 #pragma once
 
 enum CommandType {
-    PUSH = 101,
-    POP = 102,
-    ADD = 201,
-    MUL = 202,
-    IN = 301,
-    OUT = 302,
-    AND = 401,
-    CANARY = 1000
+    PUSH = 101, //Stack-operation group
+    PUSHRAX = 111,
+    PUSHRBX = 121,
+    PUSHRCX = 131,
+    PUSHRDX = 141,
+    POP = 102, //Stack-operation group
+    POPRAX = 112,
+    POPRBX = 122,
+    POPRCX = 132,
+    POPRDX = 142,
+    ADD = 201, //Arithmetic group
+    MUL = 202, //Arithmetic group
+    IN = 301, //IO group
+    OUT = 302, //IO group
+    AND = 401, //System group
+    CANARY = 1000 //Security group
 };
 
 struct Command {
@@ -28,6 +36,8 @@ struct Command {
     int arg{0};
     
   public:
+    static const int CANARY_ARG = 16091998;
+    
     Command(CommandType type_, int arg_) : type(type_), arg(arg_) {}
     Command(unsigned char const* pointer) {
         Decompile(pointer);
@@ -48,20 +58,33 @@ struct Command {
         Decompile(pointer + sizeof(int), &arg);
     }
     
-    void Compile(unsigned char* pointer) {
+    void Compile(unsigned char* pointer) const {
         Compile(pointer, (int)type);
         Compile(pointer + sizeof(int), arg);
     }
     
     bool IsValid() const {
         int tempType = (int)type;
-        return (tempType == CommandType::PUSH || tempType == CommandType::POP || tempType == CommandType::ADD 
-                || tempType == CommandType::MUL || tempType == CommandType::IN || tempType == CommandType::OUT
-                || tempType == CommandType::AND || tempType == CommandType::CANARY);
+        return (tempType == CommandType::PUSH || 
+                tempType == CommandType::PUSHRAX || 
+                tempType == CommandType::PUSHRBX || 
+                tempType == CommandType::PUSHRCX || 
+                tempType == CommandType::PUSHRDX || 
+                tempType == CommandType::POP || 
+                tempType == CommandType::POPRAX || 
+                tempType == CommandType::POPRBX || 
+                tempType == CommandType::POPRCX || 
+                tempType == CommandType::POPRDX || 
+                tempType == CommandType::ADD || tempType == CommandType::MUL || tempType == CommandType::IN 
+                || tempType == CommandType::OUT || tempType == CommandType::AND || tempType == CommandType::CANARY);
     }
     
     static Command GetCanary() {
-        return Command(CommandType::CANARY, 0);
+        return Command(CommandType::CANARY, CANARY_ARG);
+    }
+
+    bool EqualsCanary() const {
+        return (int)type == (int)CommandType::CANARY && arg == CANARY_ARG;
     }
 };
 
