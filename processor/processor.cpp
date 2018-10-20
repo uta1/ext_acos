@@ -58,7 +58,7 @@ class Processor {
         return Error(OK);
     }
     
-    Error Process(Command command) {
+    Error Process(Command command, int currentLine, int* newLine) {
         if (!command.IsValid()) {
             fprintf(stderr, "Invalid command:\n type: %i\n arg: %i\n", (int)command.GetType(), command.GetArg());
             return Error(INVALID_COMMAND);
@@ -140,6 +140,13 @@ class Processor {
           case CommandType::OUT:            
             PrintTop();
             break;
+            
+          case CommandType::LABEL:
+            break;
+            
+          case CommandType::GOTO:
+            *newLine = command.GetArg();
+            break;
         }
         
         return Error(OK);
@@ -155,16 +162,20 @@ class Processor {
             return false;
         }
         
-        for (int i = 1; i < totalCommands; ++i) {
-            Command current(dataCommandArray + i * sizeof(Command));
+        for (int currentLine = 1; currentLine < totalCommands; ) {
+            Command current(dataCommandArray + currentLine * sizeof(Command));
             if (current.GetType() == CommandType::AND) {
                 s.Clear();
                 return true;
             }
-            Error error = Process(current);
+            
+            int newLine = currentLine + 1;
+            Error error = Process(current, currentLine, &newLine);
             if (error != Error::OK) {
                 return false;
             }
+            
+            currentLine = newLine;
         }
         
         s.Clear();

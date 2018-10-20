@@ -16,6 +16,8 @@ enum CommandType {
     IN = 301, //IO group
     OUT = 302, //IO group
     AND = 401, //System group
+    LABEL = 501, //Label group
+    GOTO = 502, //Label group
     CANARY = 1000 //Security group
 };
 
@@ -76,7 +78,8 @@ struct Command {
                 tempType == CommandType::POPRCX || 
                 tempType == CommandType::POPRDX || 
                 tempType == CommandType::ADD || tempType == CommandType::MUL || tempType == CommandType::IN 
-                || tempType == CommandType::OUT || tempType == CommandType::AND || tempType == CommandType::CANARY);
+                || tempType == CommandType::OUT || tempType == CommandType::AND || 
+                tempType == CommandType::LABEL || tempType == CommandType::GOTO || tempType == CommandType::CANARY);
     }
     
     static Command GetCanary() {

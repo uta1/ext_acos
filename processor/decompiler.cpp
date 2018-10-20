@@ -3,6 +3,7 @@
 #include <sstream>
 #include <iostream>
 #include <string>
+#include <map>
 #include "command.hpp"
 #include "stack.hpp"
 #include "file_operations.hpp"
@@ -11,6 +12,18 @@ using std::cin;
 using std::cout;
 using std::endl;
 using std::string;
+using std::map;
+
+void detectLabels(unsigned char const* binSource, int finSize, map<int, int> *labels) {
+    for (int i = 0; i < finSize; i += 8) {
+        int type = binSource[i + 0] + (binSource[i + 1] << 8) + (binSource[i + 2] << 16) + (binSource[i + 3] << 24);
+        int arg = binSource[i + 4] + (binSource[i + 5] << 8) + (binSource[i + 6] << 16) + (binSource[i + 7] << 24);
+ 
+        if (type == CommandType::LABEL) {
+            (*labels)[i / 8] = arg;
+        }
+    }
+}
 
 bool decompile(char const* pathIn, char const* pathOut) {
     int finSize = getFileSize(pathIn);
@@ -26,9 +39,13 @@ bool decompile(char const* pathIn, char const* pathOut) {
     
     read(fileno(fin), binSource, finSize);
     
+    map<int, int> labels;
+    detectLabels(binSource, finSize, &labels);
+    
     for (int i = 0; i < finSize; i += 8) {
         int type = binSource[i + 0] + (binSource[i + 1] << 8) + (binSource[i + 2] << 16) + (binSource[i + 3] << 24);
         int arg = binSource[i + 4] + (binSource[i + 5] << 8) + (binSource[i + 6] << 16) + (binSource[i + 7] << 24);
+        
         if (i == 0 && type != CommandType::CANARY) {
             fprintf(stderr, "Broken bin-fine: starts not with canary\n");
             return false;
@@ -36,11 +53,43 @@ bool decompile(char const* pathIn, char const* pathOut) {
         
         switch (type) {
           case CommandType::PUSH:
-            fprintf(fout, "PUSH %i\n", arg);
+            fprintf(fout, "PUSH S %i\n", arg);
             break;
             
+          case CommandType::PUSHRAX:
+            fprintf(fout, "PUSH RAX\n");
+            break;
+              
+          case CommandType::PUSHRBX:
+            fprintf(fout, "PUSH RBX\n");
+            break;
+
+          case CommandType::PUSHRCX:
+            fprintf(fout, "PUSH RCX\n");
+            break;
+
+          case CommandType::PUSHRDX:
+            fprintf(fout, "PUSH RDX\n");
+            break;
+
           case CommandType::POP:
-            fprintf(fout, "POP\n");
+            fprintf(fout, "POP S\n");
+            break;
+          
+          case CommandType::POPRAX:
+            fprintf(fout, "POP RAX\n");
+            break;
+          
+          case CommandType::POPRBX:
+            fprintf(fout, "POP RBX\n");
+            break;
+          
+          case CommandType::POPRCX:
+            fprintf(fout, "POP RCX\n");
+            break;
+          
+          case CommandType::POPRDX:
+            fprintf(fout, "POP RDX\n");
             break;
             
           case CommandType::ADD:
@@ -61,6 +110,14 @@ bool decompile(char const* pathIn, char const* pathOut) {
             
           case CommandType::AND:
             fprintf(fout, "AND\n");
+            break;
+
+          case CommandType::LABEL:
+            fprintf(fout, ": %i\n", arg);
+            break;
+          
+          case CommandType::GOTO:
+            fprintf(fout, "GOTO %i\n", labels[arg]);
             break;
 
           case CommandType::CANARY:

@@ -2,6 +2,9 @@
 #include <sstream>
 #include <iostream>
 #include <string>
+#include <set>
+#include <map>
+#include <vector>
 #include "command.hpp"
 #include "stack.hpp"
 #include "file_operations.hpp"
@@ -10,6 +13,9 @@ using std::cin;
 using std::cout;
 using std::endl;
 using std::string;
+using std::vector;
+using std::set;
+using std::map;
 
 void writeCanary(FILE* fout) {
     Command canary = Command::GetCanary();
@@ -23,22 +29,52 @@ void writeCanary(FILE* fout) {
     }
 }
 
-void writeUserCommand(FILE* fout, std::istringstream &stream, CommandType commandType, unsigned char* binCommand, bool withArg) {
-    int arg = 0;
-    if (withArg) {
-        stream >> arg;
-    }
-
+void writeCommandToFile(FILE* fout, CommandType commandType, int arg, unsigned char* binCommand) {
     Command(commandType, arg).Compile(binCommand);
     for (int i = 0; i < 8; ++i) {
         fprintf(fout, "%c", binCommand[i]);
     }
 }
 
-bool compile(char const* pathIn, char const* pathOut) {
+bool processLabel(std::istringstream &stream, map<int, set<int> >* labels, int commandIndex, int* name) {
+    int arg = 0;
+    stream >> arg;
+    
+    *name = arg;
+    
+    if ((*labels)[arg].size() == 1 && *((*labels)[arg].begin()) != commandIndex) {
+        fprintf(stderr, "\033[31mCompilation error:\033[0m redefine of label %i\n", arg);
+        return false;
+    }
+    
+    (*labels)[arg].insert(commandIndex);
+    
+    return true;
+}
+
+void writeUserCommand(FILE* fout, std::istringstream &stream, CommandType commandType, unsigned char* binCommand, bool withArg) {
+    int arg = 0;
+    if (withArg) {
+        stream >> arg;
+    }
+
+    writeCommandToFile(fout, commandType, arg, binCommand);
+}
+
+void writeGoto(FILE* fout, std::istringstream &stream, map<int, set<int> >* labels, unsigned char* binCommand) {
+    int arg = 0;
+    stream >> arg;
+
+    if (labels->count(arg) > 0) {
+        arg = *((*labels)[arg].begin());
+        writeCommandToFile(fout, CommandType::GOTO, arg, binCommand);
+    }
+}
+
+bool compileCycle(char const* pathIn, char const* pathOut, map<int, set<int> > *labels) {
     int finSize = getFileSize(pathIn);
     if (!isValidFile(pathIn)) {
-        fprintf(stderr, "Invalid path to source\n");
+        fprintf(stderr, "\033[Error:\033[0m invalid path to source\n");
         return false;
     }
 
@@ -54,7 +90,22 @@ bool compile(char const* pathIn, char const* pathOut) {
     FILE* fout = fopen(pathOut, "wb");
     writeCanary(fout);
 
+    int commandIndex = 0; // canary was first, first user command has number 1
     while (stream >> type) {
+        ++commandIndex;
+        
+        if (strcmp(type, ":") == 0) {
+           int name = 0;
+           processLabel(stream, labels, commandIndex, &name);
+           writeCommandToFile(fout, CommandType::LABEL, name, binCommand);
+           continue;
+        }
+        
+        if (strcmp(type, "GOTO") == 0) {
+            writeGoto(fout, stream, labels, binCommand);
+            continue;
+        }
+        
         if (strcmp(type, "PUSH") == 0) {
             stream >> sysArg;
             
@@ -126,7 +177,7 @@ bool compile(char const* pathIn, char const* pathOut) {
             continue;
         }
 
-        fprintf(stderr, "Unknown command type: %s\n", type);
+        fprintf(stderr, "\033[31mCompilation error:\033[0m unknown command type \"%s\"\n", type);
         
         free(type);
         free(binCommand);
@@ -145,9 +196,14 @@ bool compile(char const* pathIn, char const* pathOut) {
 
 int main(int argc, char* argv[]) {
     if (argc <= 2 || !isValidFile(argv[1])) {
-        printf("Invalid argument: first must be path to source and second - path to bin.\n");
+        printf("\033[31mError:\033[0m invalid argument: first must be path to source and second - path to bin.\n");
         return 1;
     }
     
-    return !compile(argv[1], argv[2]);
+    map<int, set<int> > labels;
+    if (!compileCycle(argv[1], argv[2], &labels)) {
+        return 1;
+    }
+    
+    return !compileCycle(argv[1], argv[2], &labels);
 }
