@@ -7,6 +7,9 @@
 #include <cstring>
 #include <typeinfo>
 
+#define NO_TRACE nullptr
+#define NO_MESSAGE nullptr
+
 /*! ---------------------------------
 * @brief Safety stack with some 
 *        security levels
@@ -31,7 +34,9 @@ class Stack{
         MEMORY_CORRUPTED = -3
     };
 
-  private:    
+  private:
+    char metaDataCanaryLeft[8] = "\0";
+  
     ///Capacity cannot be more than MAX_SIZE
     static const int MAX_SIZE = (1 << 20) - 1;
     ///Koefficient of changing of capacity
@@ -40,17 +45,21 @@ class Stack{
     char const *CANARY_OBJECT = "_canary\0";
     ///Hasher
     std::hash<T> hasher;
-
-    char metaDataCanaryLeft[8] = "\0";
     
     int capacity = 0;
     int size = 0;
     
     T* array;
     
-    long long arrayHash = 0;
+    long long hash = 0;
     
     char metaDataCanaryRight[8] = "\0";
+    
+    static void PrintError(char const* description) {
+        if (description != nullptr) {
+            fprintf(stderr, "\033[31mError:\033[0m %s\n", description);
+        }
+    }
     
     /*! ---------------------------------
     * @brief Print all main information
@@ -60,14 +69,17 @@ class Stack{
     *
     * -----------------------------------
     */
-    void Dump(const char* message) const {
-        if (message != nullptr) {
-            fprintf(stderr, "%s\n", message);
+    void Dump(const char* message = NO_MESSAGE, char const* trace = NO_TRACE) const {
+        if (trace != NO_TRACE) {
+            fprintf(stderr, "\033[34mDump from:\033[0m %s\n", trace);
         }
         
-        fprintf(stderr, "size: %i\n", size);
-        fprintf(stderr, "capacity: %i\n", capacity);
+        PrintError(message);
         
+        fprintf(stderr, "\033[33msize:\033[0m %i\n", size);
+        fprintf(stderr, "\033[33mcapacity:\033[0m %i\n", capacity);
+        
+        fprintf(stderr, "\033[33marray:\033[0m ");
         for (int i = 0; i < size; ++i) {
            std::cout << array[i] << " ";
         }
@@ -92,13 +104,12 @@ class Stack{
         if (!leftValidity || !rightValidity) {
             if (toComment) {
                 if (!leftValidity && !rightValidity) {
-                    fprintf(stderr, "Left and right bounds of metadata are corrupted.\n");
+                    Dump("Left and right bounds of metadata are corrupted", __PRETTY_FUNCTION__);
                 } else if (!leftValidity) {
-                    fprintf(stderr, "Left bound of data is corrupted.\n");
+                    Dump("Left bound of data is corrupted", __PRETTY_FUNCTION__);
                 } else {
-                    fprintf(stderr, "Right bound of data is corrupted.\n");
+                    Dump("Right bound of data is corrupted", __PRETTY_FUNCTION__);
                 }
-                Dump(nullptr);
             }
             
             return false;
@@ -114,7 +125,7 @@ class Stack{
     *
     * -----------------------------------
     */
-    long long GetArrayHash() const {
+    long long GetHash() const {
         const long long mod = 1e9 + 7;
         const long long p = 37;
         
@@ -130,6 +141,14 @@ class Stack{
             currentKoefficient %= mod;
         }
         
+        result += currentKoefficient * capacity;
+        result %= mod;
+        currentKoefficient *= p;
+        currentKoefficient %= mod;
+            
+        result += currentKoefficient * size;
+        result %= mod;
+        
         return result;
     }
     
@@ -143,13 +162,14 @@ class Stack{
     *
     * -----------------------------------
     */
-    Error Ok(bool toComment) const {
+    Error Ok(bool toComment, char const* trace = NO_TRACE) const {
         if (!TestCanaryOnValidity(toComment)) {
             return Error(MEMORY_CORRUPTED);
         }
-        if (arrayHash != GetArrayHash()) {
+        if (hash != GetHash()) {
             if (toComment) {
-                printf("Hash does not match the valid hash\n");
+                Dump("Hash does not match the valid hash", trace);
+                exit(0);
             }
             return Error(MEMORY_CORRUPTED);
         }
@@ -167,13 +187,15 @@ class Stack{
     *
     * @returns  Enum Error
     *
+    * @note Not rehash stack, do it after call
+    *
     * -----------------------------------
     */
     Error TryToResizeBuffer(bool toIncrease, bool toComment) {
         int tempCapacity = toIncrease ? capacity * GROWTH_FACTOR : capacity / GROWTH_FACTOR;
         if (tempCapacity > MAX_SIZE) {
             if (toComment) {
-                fprintf(stderr, "Max size exceeded (%i elements).\n", capacity);
+                fprintf(stderr, "Max size exceeded (%i elements)\n", capacity);
             }
             return Error(MAX_SIZE_EXCEEDED);
         }
@@ -186,7 +208,7 @@ class Stack{
         if (tempArray == nullptr) {
             if (toComment) {
                 fprintf(stderr, "On %s:", toIncrease ? "increasing of buffer" : "reducing of buffer");
-                Dump("Can not change buffer: allocation failed");
+                Dump("Can not change buffer: allocation failed", __PRETTY_FUNCTION__);
             }
             return Error(ALLOCATION_FAILED);
         }
@@ -212,24 +234,25 @@ class Stack{
         array = new T[capacity]{T()};
 
         if (array == nullptr) {
-            Dump("Can not create buffer: allocation has failed");
+            Dump("Can not create buffer: allocation has failed", __PRETTY_FUNCTION__);
         }
         
         for (int i = 0; i < size; ++i) {
             array[i] = other.array[i];
         }
         
-        arrayHash = GetArrayHash();
+        hash = GetHash();
     }
+    
   public:
     Stack() {
         size = 0;
         capacity = 1;
         array = new T[capacity]{T()};
-        arrayHash = GetArrayHash();
+        hash = GetHash();
         
         if (array == nullptr) {
-            Dump("Can not create buffer: allocation has failed");
+            Dump("Can not create buffer: allocation has failed", __PRETTY_FUNCTION__);
             return;
         }
         
@@ -257,9 +280,10 @@ class Stack{
     * -----------------------------------
     */
     bool Push(T element) {
-        if (Ok(true) != Error::OK) {
+        if (Ok(true, __PRETTY_FUNCTION__) != Error::OK) {
             return false;
         }
+        
         if (size == capacity) {
             Error errorCode = TryToResizeBuffer(true, true);
             if (errorCode != Error::OK) {
@@ -269,7 +293,7 @@ class Stack{
         
         array[size] = element;
         ++size;
-        arrayHash = GetArrayHash();
+        hash = GetHash();
         
         return true;
     }
@@ -282,17 +306,22 @@ class Stack{
     * -----------------------------------
     */
     bool Pop() {
-        if (size == 0) {
-            fprintf(stderr, "Attempt to pop value from empty stack\n");
+        if (Ok(true, __PRETTY_FUNCTION__) != Error::OK) {
             return false;
         }
+        
+        if (size == 0) {
+            PrintError("Attempt to pop value from empty stack");
+            return false;
+        }
+        
         --size;
         
         if (size * GROWTH_FACTOR < capacity) {
             TryToResizeBuffer(false, true);
         }
         
-        arrayHash = GetArrayHash();
+        hash = GetHash();
     
         return true;
     }
@@ -312,7 +341,7 @@ class Stack{
         if (result == nullptr) {
             return false;
         }
-        if (Ok(true) != Error::OK) {
+        if (Ok(true, __PRETTY_FUNCTION__) != Error::OK) {
             return false;
         }
         
@@ -320,7 +349,7 @@ class Stack{
             *result = array[size - 1];
             return true;
         } else {
-            fprintf(stderr, "Attempt to get value from empty stack. Trash value was returned.\n");
+            PrintError("Attempt to get value from empty stack");
             return false;
         }
     }
@@ -342,7 +371,7 @@ class Stack{
     * -----------------------------------
     */
     void Clear() {
-        if (Ok(true) != Error::OK) {
+        if (Ok(true, __PRETTY_FUNCTION__) != Error::OK) {
             return;
         }
     
@@ -352,7 +381,7 @@ class Stack{
             TryToResizeBuffer(false, true);
         }
         
-        arrayHash = GetArrayHash();
+        hash = GetHash();
     }
 
     /*! ---------------------------------
@@ -362,7 +391,7 @@ class Stack{
     * -----------------------------------
     */
     void Print() const {
-        Dump(nullptr);
+        Dump(NO_MESSAGE, NO_TRACE);
     }
 
     Stack& operator=(const Stack<T>& other) {
@@ -370,12 +399,12 @@ class Stack{
             return *this;
         }
     
-        if (Ok(true) != Error::OK) {
+        if (Ok(true, __PRETTY_FUNCTION__) != Error::OK) {
             return *this;
         }
         
         if (other.Ok(false) != Error::OK) {
-            fprintf(stderr, "Right operand of assignment is bkoken, assignment canceled\n");
+            PrintError("Right operand of assignment is broken, assignment canceled");
             return *this;
         }
         
