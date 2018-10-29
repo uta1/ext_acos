@@ -98,7 +98,7 @@ class Stack{
     * -----------------------------------
     */
     bool TestCanaryOnValidity(bool toComment) const {
-        bool leftValidity = (strcmp(metaDataCanaryLeft, CANARY_OBJECT) == 0);
+        bool leftValidity  = (strcmp(metaDataCanaryLeft,  CANARY_OBJECT) == 0);
         bool rightValidity = (strcmp(metaDataCanaryRight, CANARY_OBJECT) == 0);
         
         if (!leftValidity || !rightValidity) {
@@ -292,7 +292,7 @@ class Stack{
         }
         
         array[size] = element;
-        ++size;
+        ++size; 
         hash = GetHash();
         
         return true;
