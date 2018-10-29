@@ -15,12 +15,12 @@ using std::string;
 using std::map;
 
 void detectLabels(unsigned char const* binSource, int finSize, map<int, int> *labels) {
-    for (int i = 0; i < finSize; i += 8) {
+    for (int i = 0; i < finSize; i += sizeof(Command)) {
         int type = binSource[i + 0] + (binSource[i + 1] << 8) + (binSource[i + 2] << 16) + (binSource[i + 3] << 24);
-        int arg = binSource[i + 4] + (binSource[i + 5] << 8) + (binSource[i + 6] << 16) + (binSource[i + 7] << 24);
+        int arg =  binSource[i + 4] + (binSource[i + 5] << 8) + (binSource[i + 6] << 16) + (binSource[i + 7] << 24);
  
         if (type == CommandType::LABEL) {
-            (*labels)[i / 8] = arg;
+            (*labels)[i / sizeof(Command)] = arg;
         }
     }
 }
@@ -42,9 +42,9 @@ bool decompile(char const* pathIn, char const* pathOut) {
     map<int, int> labels;
     detectLabels(binSource, finSize, &labels);
     
-    for (int i = 0; i < finSize; i += 8) {
-        int type = binSource[i + 0] + (binSource[i + 1] << 8) + (binSource[i + 2] << 16) + (binSource[i + 3] << 24);
-        int arg = binSource[i + 4] + (binSource[i + 5] << 8) + (binSource[i + 6] << 16) + (binSource[i + 7] << 24);
+    for (int i = 0; i < finSize; i += sizeof(Command)) {
+        int type = binSource[i + 0] + (binSource[i + 1] << 8) + (binSource[i + 2]  << 16) + (binSource[i + 3]  << 24);
+        int arg = binSource[i + 4] + (binSource[i + 5] << 8) + (binSource[i + 6]  << 16) + (binSource[i + 7]  << 24);
         
         if (i == 0 && type != CommandType::CANARY) {
             fprintf(stderr, "Broken bin-fine: starts not with canary\n");
@@ -72,6 +72,10 @@ bool decompile(char const* pathIn, char const* pathOut) {
             fprintf(fout, "PUSH RDX\n");
             break;
 
+          case CommandType::PUSHRAM:
+            fprintf(fout, "PUSH RAM %i\n", arg);
+            break;
+
           case CommandType::POP:
             fprintf(fout, "POP S\n");
             break;
@@ -92,6 +96,10 @@ bool decompile(char const* pathIn, char const* pathOut) {
             fprintf(fout, "POP RDX\n");
             break;
             
+          case CommandType::POPRAM:
+            fprintf(fout, "POP RAM %i\n", arg);
+            break;
+
           case CommandType::ADD:
             fprintf(fout, "ADD\n");
             break;

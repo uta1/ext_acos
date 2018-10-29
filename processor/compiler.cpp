@@ -20,18 +20,18 @@ using std::map;
 void writeCanary(FILE* fout) {
     Command canary = Command::GetCanary();
 
-    unsigned char canaryArray[8] = "\0\0\0\0\0\0\0";
+    unsigned char canaryArray[sizeof(Command)];
 
     canary.Compile(canaryArray);
 
-    for (int i = 0; i < 8; ++i) {
+    for (int i = 0; i < sizeof(Command); ++i) {
         fprintf(fout, "%c", canaryArray[i]);
     }
 }
 
 void writeCommandToFile(FILE* fout, CommandType commandType, int arg, unsigned char* binCommand) {
     Command(commandType, arg).Compile(binCommand);
-    for (int i = 0; i < 8; ++i) {
+    for (int i = 0; i < sizeof(Command); ++i) {
         fprintf(fout, "%c", binCommand[i]);
     }
 }
@@ -83,7 +83,7 @@ bool compileCycle(char const* pathIn, char const* pathOut, map<int, set<int> > *
     std::istringstream stream;
     stream.str(source);
     
-    unsigned char* binCommand = (unsigned char*)calloc(8, sizeof(unsigned char));
+    unsigned char* binCommand = (unsigned char*)calloc(sizeof(Command), sizeof(unsigned char));
     char* type = (char*)calloc(10, sizeof(char));
     char* sysArg = (char*)calloc(10, sizeof(char)); 
     
@@ -110,7 +110,7 @@ bool compileCycle(char const* pathIn, char const* pathOut, map<int, set<int> > *
             stream >> sysArg;
             
             if (strcmp(sysArg, "S") == 0) {
-                writeUserCommand(fout, stream, CommandType::PUSH, binCommand, true);
+                writeUserCommand(fout, stream, CommandType::PUSH,    binCommand, true);
             } else 
             
             if (strcmp(sysArg, "RAX") == 0) {
@@ -124,6 +124,10 @@ bool compileCycle(char const* pathIn, char const* pathOut, map<int, set<int> > *
             } else 
             if (strcmp(sysArg, "RDX") == 0) {
                 writeUserCommand(fout, stream, CommandType::PUSHRDX, binCommand, false);
+            } else 
+
+            if (strcmp(sysArg, "RAM") == 0) {
+                writeUserCommand(fout, stream, CommandType::PUSHRAM, binCommand, true);
             }
             
             continue;
@@ -133,7 +137,7 @@ bool compileCycle(char const* pathIn, char const* pathOut, map<int, set<int> > *
             stream >> sysArg;
             
             if (strcmp(sysArg, "S") == 0) {
-                writeUserCommand(fout, stream, CommandType::POP, binCommand, false);
+                writeUserCommand(fout, stream, CommandType::POP,    binCommand, false);
             } else 
             
             if (strcmp(sysArg, "RAX") == 0) {
@@ -147,6 +151,10 @@ bool compileCycle(char const* pathIn, char const* pathOut, map<int, set<int> > *
             } else 
             if (strcmp(sysArg, "RDX") == 0) {
                 writeUserCommand(fout, stream, CommandType::POPRDX, binCommand, false);
+            } else 
+
+            if (strcmp(sysArg, "RAM") == 0) {
+                writeUserCommand(fout, stream, CommandType::POPRAM, binCommand, true);
             }
             
             continue;
@@ -163,7 +171,7 @@ bool compileCycle(char const* pathIn, char const* pathOut, map<int, set<int> > *
         }
 
         if (strcmp(type, "IN") == 0) {
-            writeUserCommand(fout, stream, CommandType::IN, binCommand, false);
+            writeUserCommand(fout, stream, CommandType::IN,  binCommand, false);
             continue;
         }
 

@@ -6,11 +6,13 @@ enum CommandType {
     PUSHRBX = 121,
     PUSHRCX = 131,
     PUSHRDX = 141,
+    PUSHRAM = 151,
     POP = 102, //Stack-operation group
     POPRAX = 112,
     POPRBX = 122,
     POPRCX = 132,
     POPRDX = 142,
+    POPRAM = 152,
     ADD = 201, //Arithmetic group
     MUL = 202, //Arithmetic group
     IN = 301, //IO group
@@ -72,11 +74,13 @@ struct Command {
                 tempType == CommandType::PUSHRBX || 
                 tempType == CommandType::PUSHRCX || 
                 tempType == CommandType::PUSHRDX || 
+                tempType == CommandType::PUSHRAM || 
                 tempType == CommandType::POP || 
                 tempType == CommandType::POPRAX || 
                 tempType == CommandType::POPRBX || 
                 tempType == CommandType::POPRCX || 
-                tempType == CommandType::POPRDX || 
+                tempType == CommandType::POPRDX ||
+                tempType == CommandType::POPRAM || 
                 tempType == CommandType::ADD || tempType == CommandType::MUL || tempType == CommandType::IN 
                 || tempType == CommandType::OUT || tempType == CommandType::AND || 
                 tempType == CommandType::LABEL || tempType == CommandType::GOTO || tempType == CommandType::CANARY);

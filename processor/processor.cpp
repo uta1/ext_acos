@@ -14,12 +14,16 @@ class Processor {
         INVALID_COMMAND = 1,
         EXTRA_CANARY = 2,
         WRANG_ENTERED_NUMBER = 3,
-        SOURCE_ERROR = 4
+        SOURCE_ERROR = 4,
+        UNSUPPORTED_SOFTWARE = 5
     };
     
   private:
+    static const int RAM_SIZE = 1000;
     static const int INTS_PER_COMMAND = sizeof(Command) / sizeof(int);
+    
     Stack<int> s;
+    int ram[RAM_SIZE]{0};
     int rax = 0;
     int rbx = 0;
     int rcx = 0;
@@ -29,6 +33,15 @@ class Processor {
         if (s.GetSize() < 1) {
             fprintf(stderr, "Source error:\n getting item from empty stack\n");
             return Error(SOURCE_ERROR);
+        }
+        
+        return Error(OK);
+    }
+    
+    Error CheckPointerValidity(int pointer) const {
+        if (pointer >= RAM_SIZE) {
+            fprintf(stderr, "Unsupported software:\n not enough RAM (no address %i)\n", pointer);
+            return Error(UNSUPPORTED_SOFTWARE);
         }
         
         return Error(OK);
@@ -44,6 +57,28 @@ class Processor {
         
         return Error(OK);
     }
+    
+    Error PushRam(int pointer) {
+        Error error = CheckPointerValidity(pointer);
+        if (error != Error::OK) {
+            return error;
+        }
+        
+        s.GetTop(ram + pointer);
+        
+        return Error(OK);
+    }
+    
+    Error PopRam(int pointer) {
+        Error error = CheckPointerValidity(pointer);
+        if (error != Error::OK) {
+            return error;
+        }
+        
+        s.Push(ram[pointer]);
+        
+        return Error(OK);
+    }    
     
     Error PrintTop() const {
         Error error = CheckNonemptyStack();
@@ -64,8 +99,8 @@ class Processor {
             return Error(INVALID_COMMAND);
         }
         
-        int arg1 = 0;
-        int arg2 = 0;
+        int processArg1 = 0;
+        int processArg2 = 0;
         int enteredNumber = 0;
         
         switch (command.GetType()) {
@@ -93,6 +128,10 @@ class Processor {
             PushReg(&rdx);
             break;
             
+          case CommandType::PUSHRAM:
+            PushRam(command.GetArg());
+            break;  
+            
           case CommandType::POP:
             s.Pop();
             break;
@@ -113,20 +152,24 @@ class Processor {
             s.Push(rdx);
             break;
 
+          case CommandType::POPRAM:
+            PopRam(command.GetArg());
+            break;  
+
           case CommandType::ADD:
-            s.GetTop(&arg1);
+            s.GetTop(&processArg1);
             s.Pop();
-            s.GetTop(&arg2);
+            s.GetTop(&processArg2);
             s.Pop();
-            s.Push(arg1 + arg2);
+            s.Push(processArg1 + processArg2);
             break;
             
           case CommandType::MUL:
-            s.GetTop(&arg1);
+            s.GetTop(&processArg1);
             s.Pop();
-            s.GetTop(&arg2);
+            s.GetTop(&processArg2);
             s.Pop();
-            s.Push(arg1 * arg2);
+            s.Push(processArg1 * processArg2);
             break;
             
           case CommandType::IN:
@@ -188,15 +231,15 @@ class Processor {
         }
         
         int finSize = getFileSize(pathToBin);
-        if (finSize % 8 != 0) {
-            fprintf(stderr, "The program does not comply with the protocol:\n commands must be 8 bytes each\n");
+        if (finSize % sizeof(Command) != 0) {
+            fprintf(stderr, "The program does not comply with the protocol:\n commands must be %lu bytes each\n", sizeof(Command));
             return false;
         }
 
         FILE* fin = fopen(pathToBin, "rb");
         unsigned char* binSource = (unsigned char*)calloc(finSize + 1, sizeof(unsigned char));
         read(fileno(fin), binSource, finSize);
-        Execute(binSource, finSize >> 3);
+        Execute(binSource, finSize / sizeof(Command));
         
         fclose(fin);
         free(binSource);
