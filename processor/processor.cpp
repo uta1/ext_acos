@@ -29,8 +29,8 @@ class Processor {
     int rcx = 0;
     int rdx = 0;
     
-    Error CheckNonemptyStack() const {
-        if (s.GetSize() < 1) {
+    Error CheckStackFullness(int minSize) const {
+        if (s.GetSize() < minSize) {
             fprintf(stderr, "Source error:\n getting item from empty stack\n");
             return Error(SOURCE_ERROR);
         }
@@ -48,7 +48,7 @@ class Processor {
     }
     
     Error PushReg(int* reg) {
-        Error error = CheckNonemptyStack();
+        Error error = CheckStackFullness(1);
         if (error != Error::OK) {
             return error;
         }
@@ -56,6 +56,11 @@ class Processor {
         s.GetTop(reg);
         
         return Error(OK);
+    }
+    
+    Error CmpReg(int reg, int comparingValue) {
+        s.Push(reg);
+        s.Push(comparingValue);
     }
     
     Error PushRam(int pointer) {
@@ -81,7 +86,7 @@ class Processor {
     }    
     
     Error PrintTop() const {
-        Error error = CheckNonemptyStack();
+        Error error = CheckStackFullness(1);
         if (error != Error::OK) {
             return error;
         }
@@ -91,6 +96,60 @@ class Processor {
         cout << result << endl;
         
         return Error(OK);
+    }
+    
+    Error ProcessArithmetic(Command command) {
+        Error error = CheckStackFullness(2);
+        if (error != Error::OK) {
+            return error;
+        }
+        
+        int processArg1 = 0;
+        int processArg2 = 0;
+        
+        s.GetTop(&processArg1);
+        s.Pop();
+        s.GetTop(&processArg2);
+        s.Pop();
+        
+        switch (command.GetType()) {
+          case CommandType::ADD:
+            s.Push(processArg1 + processArg2);
+            break;
+            
+          case CommandType::MUL:
+            s.Push(processArg1 * processArg2);
+            break;
+        }
+    }
+    
+    Error ProcessCompareAndJump(Command command, int* newLine) {
+        Error error = CheckStackFullness(2);
+        if (error != Error::OK) {
+            return error;
+        }
+    
+        int processArg1 = 0;
+        int processArg2 = 0;
+        
+        s.GetTop(&processArg2);
+        s.Pop();
+        s.GetTop(&processArg1);
+        s.Pop();
+        
+        switch (command.GetType()) {
+          case CommandType::JE:
+            if (processArg1 == processArg2) {
+                *newLine = command.GetArg();
+            }
+            break;
+          
+          case CommandType::JL:
+            if (processArg1 < processArg2) {
+                *newLine = command.GetArg();
+            }
+            break;
+        }
     }
     
     Error Process(Command command, int currentLine, int* newLine) {
@@ -157,19 +216,11 @@ class Processor {
             break;  
 
           case CommandType::ADD:
-            s.GetTop(&processArg1);
-            s.Pop();
-            s.GetTop(&processArg2);
-            s.Pop();
-            s.Push(processArg1 + processArg2);
+            ProcessArithmetic(command);
             break;
             
           case CommandType::MUL:
-            s.GetTop(&processArg1);
-            s.Pop();
-            s.GetTop(&processArg2);
-            s.Pop();
-            s.Push(processArg1 * processArg2);
+            ProcessArithmetic(command);
             break;
             
           case CommandType::IN:
@@ -189,6 +240,47 @@ class Processor {
             
           case CommandType::GOTO:
             *newLine = command.GetArg();
+            break;
+
+          case CommandType::CMP:
+            s.GetTop(&processArg1);
+            s.Push(processArg1);
+            s.Push(command.GetArg());
+            break;
+          
+          case CommandType::CMPRAX:
+            CmpReg(rax, command.GetArg());
+            break;
+
+          case CommandType::CMPRBX:
+            CmpReg(rbx, command.GetArg());
+            break;
+
+          case CommandType::CMPRCX:
+            CmpReg(rcx, command.GetArg());
+            break;
+
+          case CommandType::CMPRDX:
+            CmpReg(rdx, command.GetArg());
+            break;
+            
+          case CommandType::JE:
+            ProcessCompareAndJump(command, newLine);
+            break;
+            
+          case CommandType::JL:
+            ProcessCompareAndJump(command, newLine);
+            break;
+        
+          case CommandType::CALL:
+            s.Push(currentLine);
+            *newLine = command.GetArg();
+            break;
+            
+          case CommandType::RET:
+            s.GetTop(newLine);
+            (*newLine)++;
+            s.Pop();
             break;
         }
         

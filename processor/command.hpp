@@ -20,6 +20,15 @@ enum CommandType {
     AND = 401, //System group
     LABEL = 501, //Label group
     GOTO = 502, //Label group
+    CMP = 601, //Compare group
+    CMPRAX = 611,
+    CMPRBX = 621,
+    CMPRCX = 631,
+    CMPRDX = 641,
+    JE = 602, //Compare group
+    JL = 603, //Compare group
+    CALL = 701, //Function group
+    RET = 702, //Function group
     CANARY = 1000 //Security group
 };
 
@@ -81,9 +90,17 @@ struct Command {
                 tempType == CommandType::POPRCX || 
                 tempType == CommandType::POPRDX ||
                 tempType == CommandType::POPRAM || 
-                tempType == CommandType::ADD || tempType == CommandType::MUL || tempType == CommandType::IN 
-                || tempType == CommandType::OUT || tempType == CommandType::AND || 
-                tempType == CommandType::LABEL || tempType == CommandType::GOTO || tempType == CommandType::CANARY);
+                tempType == CommandType::ADD || tempType == CommandType::MUL || tempType == CommandType::IN ||
+                tempType == CommandType::OUT || tempType == CommandType::AND || 
+                tempType == CommandType::LABEL || tempType == CommandType::GOTO || 
+                tempType == CommandType::CMP || 
+                tempType == CommandType::CMPRAX || 
+                tempType == CommandType::CMPRBX || 
+                tempType == CommandType::CMPRCX || 
+                tempType == CommandType::CMPRDX ||
+                tempType == CommandType::JE || tempType == CommandType::JL || 
+                tempType == CommandType::CALL || tempType == CommandType::RET || 
+                tempType == CommandType::CANARY);
     }
     
     static Command GetCanary() {

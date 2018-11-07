@@ -44,7 +44,7 @@ bool decompile(char const* pathIn, char const* pathOut) {
     
     for (int i = 0; i < finSize; i += sizeof(Command)) {
         int type = binSource[i + 0] + (binSource[i + 1] << 8) + (binSource[i + 2]  << 16) + (binSource[i + 3]  << 24);
-        int arg = binSource[i + 4] + (binSource[i + 5] << 8) + (binSource[i + 6]  << 16) + (binSource[i + 7]  << 24);
+        int arg  = binSource[i + 4] + (binSource[i + 5] << 8) + (binSource[i + 6]  << 16) + (binSource[i + 7]  << 24);
         
         if (i == 0 && type != CommandType::CANARY) {
             fprintf(stderr, "Broken bin-fine: starts not with canary\n");
@@ -128,11 +128,47 @@ bool decompile(char const* pathIn, char const* pathOut) {
             fprintf(fout, "GOTO %i\n", labels[arg]);
             break;
 
+          case CommandType::CMP:
+            fprintf(fout, "CMP S %i\n", arg);
+            break;
+          
+          case CommandType::CMPRAX:
+            fprintf(fout, "CMP RAX %i\n", arg);
+            break;
+          
+          case CommandType::CMPRBX:
+            fprintf(fout, "CMP RBX %i\n", arg);
+            break;
+          
+          case CommandType::CMPRCX:
+            fprintf(fout, "CMP RCX %i\n", arg);
+            break;
+          
+          case CommandType::CMPRDX:
+            fprintf(fout, "CMP RDX %i\n", arg);
+            break;
+
+          case CommandType::JE:
+            fprintf(fout, "JE %i\n", labels[arg]);
+            break;
+
+          case CommandType::JL:
+            fprintf(fout, "JL %i\n", labels[arg]);
+            break;
+
           case CommandType::CANARY:
             if (i > 0) {
                 fprintf(stderr, "Broken bin-fine: non-initial canary\n");
                 return false;
             }
+            break;
+            
+          case CommandType::CALL:
+            fprintf(fout, "CALL %i\n", labels[arg]);
+            break;
+            
+          case CommandType::RET:
+            fprintf(fout, "RET\n");
             break;
             
           default:

@@ -61,13 +61,13 @@ void writeUserCommand(FILE* fout, std::istringstream &stream, CommandType comman
     writeCommandToFile(fout, commandType, arg, binCommand);
 }
 
-void writeGoto(FILE* fout, std::istringstream &stream, map<int, set<int> >* labels, unsigned char* binCommand) {
+void writeJumpCommand(FILE* fout, std::istringstream &stream, map<int, set<int> >* labels, CommandType commandType, unsigned char* binCommand) {
     int arg = 0;
     stream >> arg;
 
     if (labels->count(arg) > 0) {
         arg = *((*labels)[arg].begin());
-        writeCommandToFile(fout, CommandType::GOTO, arg, binCommand);
+        writeCommandToFile(fout, commandType, arg, binCommand);
     }
 }
 
@@ -91,100 +91,17 @@ bool compileCycle(char const* pathIn, char const* pathOut, map<int, set<int> > *
     writeCanary(fout);
 
     int commandIndex = 0; // canary was first, first user command has number 1
+    
+    #define COMPILE_CMD(name, strName, n, compileCode) \
+        if (strcmp(type, strName) == 0) { \
+            compileCode; \
+            continue; \
+        }
     while (stream >> type) {
         ++commandIndex;
         
-        if (strcmp(type, ":") == 0) {
-           int name = 0;
-           processLabel(stream, labels, commandIndex, &name);
-           writeCommandToFile(fout, CommandType::LABEL, name, binCommand);
-           continue;
-        }
+        #include "commands.h"
         
-        if (strcmp(type, "GOTO") == 0) {
-            writeGoto(fout, stream, labels, binCommand);
-            continue;
-        }
-        
-        if (strcmp(type, "PUSH") == 0) {
-            stream >> sysArg;
-            
-            if (strcmp(sysArg, "S") == 0) {
-                writeUserCommand(fout, stream, CommandType::PUSH,    binCommand, true);
-            } else 
-            
-            if (strcmp(sysArg, "RAX") == 0) {
-                writeUserCommand(fout, stream, CommandType::PUSHRAX, binCommand, false);
-            } else
-            if (strcmp(sysArg, "RBX") == 0) {
-                writeUserCommand(fout, stream, CommandType::PUSHRBX, binCommand, false);
-            } else
-            if (strcmp(sysArg, "RCX") == 0) {
-                writeUserCommand(fout, stream, CommandType::PUSHRCX, binCommand, false);
-            } else 
-            if (strcmp(sysArg, "RDX") == 0) {
-                writeUserCommand(fout, stream, CommandType::PUSHRDX, binCommand, false);
-            } else 
-
-            if (strcmp(sysArg, "RAM") == 0) {
-                writeUserCommand(fout, stream, CommandType::PUSHRAM, binCommand, true);
-            }
-            
-            continue;
-        }
-
-        if (strcmp(type, "POP") == 0) {
-            stream >> sysArg;
-            
-            if (strcmp(sysArg, "S") == 0) {
-                writeUserCommand(fout, stream, CommandType::POP,    binCommand, false);
-            } else 
-            
-            if (strcmp(sysArg, "RAX") == 0) {
-                writeUserCommand(fout, stream, CommandType::POPRAX, binCommand, false);
-            } else
-            if (strcmp(sysArg, "RBX") == 0) {
-                writeUserCommand(fout, stream, CommandType::POPRBX, binCommand, false);
-            } else
-            if (strcmp(sysArg, "RCX") == 0) {
-                writeUserCommand(fout, stream, CommandType::POPRCX, binCommand, false);
-            } else 
-            if (strcmp(sysArg, "RDX") == 0) {
-                writeUserCommand(fout, stream, CommandType::POPRDX, binCommand, false);
-            } else 
-
-            if (strcmp(sysArg, "RAM") == 0) {
-                writeUserCommand(fout, stream, CommandType::POPRAM, binCommand, true);
-            }
-            
-            continue;
-        }
-
-        if (strcmp(type, "ADD") == 0) {
-            writeUserCommand(fout, stream, CommandType::ADD, binCommand, false);
-            continue;
-        }
-
-        if (strcmp(type, "MUL") == 0) {
-            writeUserCommand(fout, stream, CommandType::MUL, binCommand, false);
-            continue;
-        }
-
-        if (strcmp(type, "IN") == 0) {
-            writeUserCommand(fout, stream, CommandType::IN,  binCommand, false);
-            continue;
-        }
-
-        if (strcmp(type, "OUT") == 0) {
-            writeUserCommand(fout, stream, CommandType::OUT, binCommand, false);
-            continue;
-        }
-
-        if (strcmp(type, "AND") == 0) {
-            writeUserCommand(fout, stream, CommandType::AND, binCommand, false);
-            continue;
-        }
-
         fprintf(stderr, "\033[31mCompilation error:\033[0m unknown command type \"%s\"\n", type);
         
         free(type);
@@ -192,6 +109,7 @@ bool compileCycle(char const* pathIn, char const* pathOut, map<int, set<int> > *
         
         return false;
     }
+    #undef COMPILE_CMD
     
     fclose(fout);
     free(type);
