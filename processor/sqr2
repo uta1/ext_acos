@@ -1,0 +1,245 @@
+    IN
+    IN
+    IN
+
+    PUSH RAX 
+    POP S
+    PUSH RBX 
+    POP S
+    PUSH RCX 
+    POP S
+    CMP RCX 0
+    JE 1000
+
+    POP RBX 
+    POP RBX 
+    MUL
+    PUSH S -4
+    POP RAX 
+    POP RCX 
+    MUL
+    MUL
+    ADD
+    PUSH RDX 
+    POP S
+    POP RCX 
+    POP RBX 
+    POP RAX 
+    POP RDX 
+
+    CMP S 0
+    JL 10000
+    CMP S 0
+    JE 10001
+    PUSH S -1
+    MUL
+    CMP S 0
+    JL 10002
+: 2
+    PUSH S -1
+    MUL
+: 1 
+    CALL 10    
+    
+    PUSH RDX
+    POP S
+    PUSH RAX
+    POP S
+    PUSH RBX
+    POP S
+    PUSH RCX
+    POP S
+    POP RCX
+    POP RBX
+    POP RAX
+
+
+    POP RDX
+    POP RDX
+    POP RBX
+    PUSH S -1
+    MUL
+    ADD
+    POP RCX
+    PUSH S 2
+    MUL
+    
+    
+    CALL 20 
+    OUT 
+    
+    POP S
+    
+    PUSH RDX
+    POP S
+    PUSH RAX
+    POP S
+    PUSH RBX
+    POP S
+    PUSH RCX
+    POP S
+    POP RCX
+    POP RBX
+    POP RAX
+        
+    POP RDX 
+    PUSH S -1 
+    MUL 
+    POP RBX 
+    PUSH S -1 
+    MUL 
+    ADD 
+    POP RCX
+    PUSH S 2 
+    MUL 
+
+
+    CALL 20 
+    OUT 
+
+    AND 
+
+ 
+
+: 10
+PUSH RAX
+POP S
+
+PUSH S 0
+PUSH RBX
+POP S
+
+: 15
+POP RBX
+POP RBX
+PUSH S -1
+MUL
+MUL
+ADD
+CMP S 0
+JE 11
+POP RBX
+POP RBX
+PUSH S 1
+MUL
+MUL
+ADD 
+POP RBX
+PUSH S 1
+ADD
+PUSH RBX
+POP S
+GOTO 15
+
+: 11
+POP S
+POP RBX
+POP RAX
+RET 
+
+
+    : 20 
+    PUSH RAX 
+    POP S 
+
+    PUSH RDX 
+    POP S  
+    PUSH RBX
+    PUSH S 0
+    PUSH RCX
+    POP S
+    POP S
+    
+    : 19
+    POP RBX
+    POP RCX
+    POP RDX
+    PUSH S -1
+    MUL
+    MUL
+    ADD
+    CMP S 0
+    JE 21 
+
+    POP S
+    POP RBX
+    POP RCX
+    POP RDX
+    MUL
+    ADD
+    CMP S 0
+    JE 22 
+
+
+    POP S
+    POP RCX
+    PUSH S 1
+    ADD
+    PUSH RCX
+    POP S
+    GOTO 19
+    AND 
+
+    : 21
+    POP S
+    POP RCX
+    POP RAX
+    RET 
+    
+    : 22
+    POP S
+    POP RCX
+    PUSH S -1
+    MUL
+    POP RAX
+    RET
+    
+    : 25
+    AND
+    AND
+
+
+
+: 1000
+CMP RBX 0
+JE 2000
+PUSH S 1
+OUT
+POP S
+POP RAX
+PUSH S -1
+MUL
+POP RBX 
+CALL 20
+OUT 
+AND 
+
+: 2000
+CMP RAX 0
+JE 3000
+PUSH S 0
+OUT 
+AND
+
+: 3000
+PUSH S 3
+OUT
+AND
+
+
+    : 10000
+    PUSH S 0
+    OUT 
+    AND 
+
+    : 10001
+    PUSH S 1
+    OUT 
+    POP S
+    GOTO 1
+
+    : 10002 
+    PUSH S 2 
+    OUT
+    POP S
+    GOTO 2 
