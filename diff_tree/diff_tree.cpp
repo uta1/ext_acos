@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
 
 #include "lib/file_operations.h"
 #include "tree/structures.h"
@@ -19,8 +21,12 @@ int main(int argc, char** argv) {
         return 1;
     }
     
+    srand(time(NULL));
+
     Node* res = NULL;
     diff(n, &res);
+
+    printLatex(stdout, res, 0);
     reduce(&res, stdout, res);
     
     //del(res);

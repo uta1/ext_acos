@@ -11,7 +11,7 @@ int parseFromString(Node** node, const char* expr, int len = -1) {
         len = strlen(expr);
     }
     
-    if (len < 3 || expr[0] != '(') {
+    if (len < 3 || expr[0] != '(') {    
         return 1;
     }
     

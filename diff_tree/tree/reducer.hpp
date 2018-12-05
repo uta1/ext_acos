@@ -28,16 +28,16 @@ double calculate(double lOperand, double rOperand, OperType oper) {
     }
 }
 
-void reduce(Node** arg, FILE* latexDumpFile = NULL, Node* root = NULL) {
+void reduce(Node** arg, FILE* latexDumpFile = NULL, Node* root = NULL, int mode = 1) {
     if (arg == NULL) {
         return;
     }
     
     if ((*arg)->lSon != NULL) {
-        reduce(&((*arg)->lSon));
+        reduce(&((*arg)->lSon), latexDumpFile, root, mode);
     }
     if ((*arg)->rSon != NULL) {
-        reduce(&((*arg)->rSon));
+        reduce(&((*arg)->rSon), latexDumpFile, root, mode);
     }
     
     if ((*arg)->oper != OperType::VAR && (*arg)->oper != OperType::NUMBER) {
@@ -51,7 +51,7 @@ void reduce(Node** arg, FILE* latexDumpFile = NULL, Node* root = NULL) {
             (*arg)->lSon = NULL;
             (*arg)->rSon = NULL;
             
-            printLatex(latexDumpFile, root);
+            printLatex(latexDumpFile, root, mode);
             return;
         }
     }
@@ -86,6 +86,6 @@ void reduce(Node** arg, FILE* latexDumpFile = NULL, Node* root = NULL) {
         }
     }
     
-    printLatex(latexDumpFile, root);
+    printLatex(latexDumpFile, root, mode);
 }
 

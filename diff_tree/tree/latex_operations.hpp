@@ -70,7 +70,27 @@ void printLatexBody(FILE* fd, const Node* node) {
     printLatexFinalize(fd, node);
 }
 
-void printLatex(FILE* fd, const Node* node) {
+void printLatex(FILE* fd, const Node* node, int mode = -1) {
+    if (mode >= 0) {
+        if (mode == 0) {
+            fprintf(fd, "OK, let's go:\n");
+        } else {
+            switch (rand() % 3) {
+              case 0:
+                fprintf(fd, "\n$\\newline\n\\newline$\ntransform...\n");
+                break;
+                
+              case 1:
+                fprintf(fd, "\n$\\newline\n\\newline$\nnext it's easy:\n");
+                break;
+                
+              case 2:
+                fprintf(fd, "\n$\\newline\n\\newline$\nwhich is obviously equals to:\n");
+                break;
+            }
+        }
+    }
+    
     if (fd == NULL) {
         return;
     }
