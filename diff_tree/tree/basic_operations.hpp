@@ -4,24 +4,36 @@
 
 #include "structures.h"
 
-OperType charToOperType(char arg) {
-    switch (arg) {
-      case '+':
-        return OperType::PLUS;
-       
-      case '-':
-        return OperType::MINUS;
-       
-      case '*':
-        return OperType::MUL;
+int getValence(OperType oper) {
+    switch (oper) {
+      case OperType::PLUS:
+        return 2;
+    
+      case OperType::MINUS:
+        return 2;
+    
+      case OperType::MUL:
+        return 2;
+    
+      case OperType::DIV:
+        return 2;
         
-      case '/':
-        return OperType::DIV;
+      case OperType::SIN:
+        return 1;
+        
+      case OperType::COS:
+        return 1;
+        
+      case OperType::VAR:
+        return 0;
+     
+      case OperType::NUMBER:
+        return 0;
     }
 }
 
 void printData(const Node* node) {
-    if (node == NULL) {
+    if (node == nullptr || node == NULL) {
         return;
     }
 
@@ -40,7 +52,7 @@ void printData(const Node* node) {
     if (node->oper == OperType::MINUS) {
         printf("-");
     }
-    
+
     if (node->oper == OperType::MUL) {
         printf("*");
     }
@@ -48,14 +60,22 @@ void printData(const Node* node) {
     if (node->oper == OperType::DIV) {
         printf("/");
     }
+    
+    if (node->oper == OperType::SIN) {
+        printf("sin");
+    }
+    
+    if (node->oper == OperType::COS) {
+        printf("cos");
+    }
 }
 
 int equalsView(const Node* node1, const Node* node2) {
-    if (node1 == NULL && node2 == NULL) {
+    if (node1 == nullptr && node2 == nullptr) {
         return 1;
     }
     
-    if (node1 == NULL || node2 == NULL) {
+    if (node1 == nullptr || node2 == nullptr) {
         return 0;
     }
     
@@ -70,36 +90,81 @@ int equalsView(const Node* node1, const Node* node2) {
     return equalsView(node1->lSon, node2->lSon) && equalsView(node1->rSon, node2->rSon);
 }
 
-void print(const Node* node, int delpth = 0) {
-    if (node == NULL) {
-        return;
-    }    
-    
+void print(const Node* node, int depth = 0);
+
+void printAll(const Node* node, int depth) {
     printf("\n");
-    
-    for (int i = 0; i < delpth; ++i) {
+
+    for (int i = 0; i < depth; ++i) {
         printf(" ");
     }
     printf("(");
+    if (node == nullptr || node == NULL) {
+        return;
+    }
     
-    print(node->lSon, delpth + 1);
+    print(node->lSon, depth + 1);
     
-    for (int i = 0; i < delpth; ++i) {
+    for (int i = 0; i < depth; ++i) {
         printf(" ");
     }
     printData(node);
     
-    print(node->rSon, delpth + 1);
+    print(node->rSon, depth + 1);
     
-    for (int i = 0; i < delpth; ++i) {
+    for (int i = 0; i < depth; ++i) {
         printf(" ");
     }
-    printf(")");
-    printf("\n");
+    fprintf(stdout, ")\n");
+    
+    return;
+}
+
+void print(const Node* node, int depth) {
+    if (node == nullptr || node == NULL) {
+        return;
+    }    
+    
+    int operValence = getValence(node->oper);
+    
+    switch (operValence) {
+      case 0:
+        printAll(node, depth);
+        break;
+        
+      case 1:
+        printf("\n");
+
+        for (int i = 0; i < depth; ++i) {
+            printf(" ");
+        }
+        printf("(\n");
+        
+        for (int i = 0; i < depth; ++i) {
+            printf(" ");
+        }
+        printData(node);
+        
+        print(node->rSon, depth + 1);
+        
+        for (int i = 0; i < depth; ++i) {
+            printf(" ");
+        }
+        printf(")");
+        printf("\n");
+        
+        break;
+        
+      case 2:    
+        printAll(node, depth);
+        break;
+    }
+    
+
 }
 
 void del(Node* node) {
-    if (node == NULL) {
+    if (node == nullptr) {
         return;
     }
     
@@ -110,8 +175,8 @@ void del(Node* node) {
 }
 
 Node* copy(const Node* node) {
-    if (node == NULL) {
-        return NULL;
+    if (node == nullptr) {
+        return nullptr;
     }
 
     Node* result = (Node*)calloc(1, sizeof(Node));

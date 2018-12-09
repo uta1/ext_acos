@@ -3,6 +3,7 @@
 #include <stdio.h>
 
 #include "structures.h"
+#include "basic_operations.hpp"
 
 void printLatexIntro(FILE* fd, const Node* node) {
     switch (node->oper) {
@@ -48,12 +49,20 @@ void printLatexInter(FILE* fd, const Node* node) {
       
       case OperType::DIV:
         fprintf(fd, ")}{(");
+        break;    
+  
+      case OperType::SIN:
+        fprintf(fd, "\\sin{(");
+        break;
+
+      case OperType::COS:
+        fprintf(fd, "\\cos{(");
         break;
     }
 }
 
 void printLatexFinalize(FILE* fd, const Node* node) {
-    if (node->oper != OperType::NUMBER && node->oper != OperType::VAR) {
+    if (getValence(node->oper) != 0) {
         fprintf(fd, ")}");
     }
 }
@@ -71,6 +80,10 @@ void printLatexBody(FILE* fd, const Node* node) {
 }
 
 void printLatex(FILE* fd, const Node* node, int mode = -1) {
+    if (fd == nullptr) {
+        return;
+    }
+
     if (mode >= 0) {
         if (mode == 0) {
             fprintf(fd, "OK, let's go:\n");
@@ -91,10 +104,6 @@ void printLatex(FILE* fd, const Node* node, int mode = -1) {
         }
     }
     
-    if (fd == NULL) {
-        return;
-    }
-
     fprintf(fd, "\n$");
     
     printLatexBody(fd, node);

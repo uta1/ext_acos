@@ -16,24 +16,25 @@ int main(int argc, char** argv) {
         return 1;
     }
     
-    Node* n = NULL;
+    Node* n = nullptr;
     if (readFromFile(argv[1], &n) != 0) {
         return 1;
     }
     
-    srand(time(NULL));
+    srand(time(nullptr));
 
-    Node* res = NULL;
+    Node* res = nullptr;
     diff(n, &res);
-
-    printLatex(stdout, res, 0);
+    //print(res, 0);
+   // printLatex(stdout, res, 0);
+    //print(res);
     reduce(&res, stdout, res);
-    
+    //print(res, 0);
     //del(res);
     
    // reduce(&n);
     //printLatex(stdout, n);
     del(n);
-   
+    del(res);
     return 0;
 }

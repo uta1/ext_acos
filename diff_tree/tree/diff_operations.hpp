@@ -3,6 +3,7 @@
 #include "../checking_definitions.h"
 #include "structures.h"
 #include "basic_operations.hpp"
+#include "latex_operations.hpp"
 
 int diff(const Node* cur, Node** result);
 
@@ -36,15 +37,15 @@ int diff(const Node* cur, Node** result) {
     
     *result = (Node*)calloc(1, sizeof(Node));
     ALLOC_CHECK(*result);
-    (*result)->lSon = NULL;
-    (*result)->rSon = NULL;
+    (*result)->lSon = nullptr;
+    (*result)->rSon = nullptr;
     
-    Node* lDiffed = NULL;
-    Node* rDiffed = NULL;
-    Node* lCopy = NULL;
-    Node* rCopy = NULL;
-    Node* nom = NULL;
-    Node* den = NULL;
+    Node* lDiffed = nullptr;
+    Node* rDiffed = nullptr;
+    Node* cashedNode1 = nullptr;
+    Node* cashedNode2 = nullptr;
+    Node* nom = nullptr;
+    Node* den = nullptr;
     
     switch (cur->oper) {
       case OperType::NUMBER:
@@ -68,36 +69,69 @@ int diff(const Node* cur, Node** result) {
       case OperType::MUL:
         diff(cur->lSon, &lDiffed);
         diff(cur->rSon, &rDiffed);
-        lCopy = copy(cur->lSon);
-        rCopy = copy(cur->rSon);
+        cashedNode1 = copy(cur->lSon);
+        cashedNode2 = copy(cur->rSon);
         
-        mulOrDivNomDiff(result, lDiffed, rDiffed, lCopy, rCopy, OperType::PLUS);
+        mulOrDivNomDiff(result, lDiffed, rDiffed, cashedNode1, cashedNode2, OperType::PLUS);
         
         break;
         
       case OperType::DIV:
         diff(cur->lSon, &lDiffed);
         diff(cur->rSon, &rDiffed);
-        lCopy = copy(cur->lSon);
-        rCopy = copy(cur->rSon);
+        cashedNode1 = copy(cur->lSon);
+        cashedNode2 = copy(cur->rSon);
         
         nom = (Node*)calloc(1, sizeof(Node));
         ALLOC_CHECK(nom);
         
-        mulOrDivNomDiff(&nom, lDiffed, rDiffed, lCopy, rCopy, OperType::MINUS);
+        mulOrDivNomDiff(&nom, lDiffed, rDiffed, cashedNode1, cashedNode2, OperType::MINUS);
         
         den = (Node*)calloc(1, sizeof(Node));
         ALLOC_CHECK(den);
         
-        rCopy = copy(cur->rSon);
-        den->lSon = rCopy;
-        rCopy = copy(cur->rSon);
-        den->rSon = rCopy;
+        cashedNode2 = copy(cur->rSon);
+        den->lSon = cashedNode2;
+        cashedNode2 = copy(cur->rSon);
+        den->rSon = cashedNode2;
         den->oper = OperType::MUL;
         
         (*result)->lSon = nom;
         (*result)->rSon = den;
         (*result)->oper = OperType::DIV;
+        
+        break;
+
+      case OperType::SIN:
+        cashedNode1 = copy(cur);
+        diff(cur->rSon, &rDiffed);
+    
+        cashedNode1->oper = OperType::COS;
+        
+        (*result)->lSon = cashedNode1;
+        (*result)->rSon = rDiffed;
+        (*result)->oper = OperType::MUL;
+        
+        break;
+        
+      case OperType::COS:
+        cashedNode1 = copy(cur);
+        diff(cur->rSon, &rDiffed);
+    
+        cashedNode1->oper = OperType::SIN;
+        
+        (*result)->lSon = (Node*)calloc(1, sizeof(Node));
+        ALLOC_CHECK((*result)->lSon);
+        (*result)->lSon->oper = OperType::NUMBER;
+        (*result)->lSon->value = -1.0;
+        
+        (*result)->rSon = (Node*)calloc(1, sizeof(Node));
+        ALLOC_CHECK((*result)->rSon);
+        (*result)->rSon->oper = OperType::MUL;
+        (*result)->rSon->rSon = rDiffed;
+        (*result)->rSon->lSon = cashedNode1;
+        
+        (*result)->oper = OperType::MUL;
         
         break;
     }

@@ -6,7 +6,9 @@ enum OperType{
     PLUS = 201,
     MINUS = 202,
     MUL = 301,
-    DIV = 302
+    DIV = 302,
+    SIN = 401,
+    COS = 402
 };
 
 const double EPS = 1e-9;
