@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../checking_definitions.h"
+#include "../lib/checking_definitions.h"
 #include "structures.h"
 #include "basic_operations.hpp"
 #include "latex_operations.hpp"

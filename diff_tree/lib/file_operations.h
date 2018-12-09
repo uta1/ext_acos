@@ -6,7 +6,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-#include "../checking_definitions.h"
+#include "checking_definitions.h"
 
 int isValidFile(const char* path) {
     struct stat fileStat = {0};
